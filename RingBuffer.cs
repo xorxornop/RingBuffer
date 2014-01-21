@@ -25,7 +25,7 @@ namespace RingByteBuffer
 	/// Makes efficient use of memory.
 	/// Ensure initialised capacity can hold typical use case requirement with some overflow tolerance.	
 	/// </remarks>	
-	public sealed class RingByteBuffer
+	public sealed class RingBuffer
 	{
 		private readonly byte[] _buffer;
 		private readonly int _capacity;
@@ -64,25 +64,25 @@ namespace RingByteBuffer
 		}
 
 		/// <summary>
-		/// Initialises a new instance of a <see cref="RingByteBuffer"/>.
+		/// Initialises a new instance of a <see cref="RingBuffer"/>.
 		/// </summary>
 		/// <param name="capacity">Maximum storage capability.</param>
 		/// <param name="allowOverwrite">If set to <c>true</c> allow overwrite.</param>
-		public RingByteBuffer (int capacity, bool allowOverwrite = false) {
+		public RingBuffer (int capacity, bool allowOverwrite = false) {
 			_capacity = capacity;
 			_buffer = new byte[capacity];
 			_overwiteable = allowOverwrite;
 		}
 
 		/// <summary>
-		/// Initialises a new instance of a <see cref="RingByteBuffer"/>.
+		/// Initialises a new instance of a <see cref="RingBuffer"/>.
 		/// </summary>
 		/// <param name="capacity">Maximum storage capability.</param>
 		/// <param name="buffer">Data to place in the ringbuffer.</param>
 		/// <param name="allowOverwrite">If set to <c>true</c> allow overwrite.</param>
 		/// <exception cref="ArgumentNullException">Supplied data array is null.</exception>
 		/// <exception cref="ArgumentException">Supplied data length exceeds capacity of created ringbuffer.</exception>
-		public RingByteBuffer (int capacity, byte[] buffer, bool allowOverwrite = false) 
+		public RingBuffer (int capacity, byte[] buffer, bool allowOverwrite = false) 
 			: this(capacity, allowOverwrite) 
 		{
 			if (buffer == null) {

@@ -1,4 +1,4 @@
-﻿//
+﻿﻿//
 //  Copyright 2013  Matthew Ducker
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,20 +19,20 @@ using System.IO;
 namespace RingByteBuffer
 {
 	/// <summary>
-	/// Exposes a <see cref="RingByteBuffer"/> as a Stream. 
+	/// Exposes a <see cref="RingBuffer"/> as a Stream. 
 	/// Provides buffer capability with standard stream interface. 
 	/// </summary>
-    public sealed class RingByteBufferStream : Stream
+    public sealed class RingBufferStream : Stream
     {
-        private readonly RingByteBuffer _ringBuffer;
+        private readonly RingBuffer _ringBuffer;
 
 		/// <summary>
-		/// Initializes a new <see cref="RingByteBufferStream"/>.
+		/// Initializes a new <see cref="RingBufferStream"/>.
 		/// </summary>
 		/// <param name="capacity">Maximum storage capacity of ringbuffer.</param>
 		/// <param name="allowOverwrite">If set to <c>true</c> allow overwrite.</param>
-		public RingByteBufferStream(int capacity, bool allowOverwrite) {
-			_ringBuffer = new RingByteBuffer(capacity, allowOverwrite);
+		public RingBufferStream(int capacity, bool allowOverwrite) {
+			_ringBuffer = new RingBuffer(capacity, allowOverwrite);
         }
 
 		/// <inheritdoc/>
