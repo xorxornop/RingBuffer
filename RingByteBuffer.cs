@@ -122,7 +122,7 @@ namespace RingByteBuffer
 			} else if (_length + count > _capacity) {
 				if (_overwiteable) {
 					int skip = (_length + count) - _capacity;
-					Skip (skip, false);
+					Skip (skip);
 				} else {
 					throw new InvalidOperationException ("Buffer capacity insufficient for write operation. " +
 						"Write a smaller quantity relative to the capacity to avoid this.");
@@ -155,7 +155,7 @@ namespace RingByteBuffer
 		public void Put (byte input) {
 			if (_length + 1 > _capacity) {
 				if (_overwiteable) {
-					Skip (1, false);
+					Skip (1);
 				} else {
 					throw new InvalidOperationException ("Buffer capacity insufficient for write operation.");
 				}
@@ -180,7 +180,7 @@ namespace RingByteBuffer
 			} else if (_length + count > _capacity) {
 				if (_overwiteable) {
 					int skip = (_length + count) - _capacity;
-					Skip (skip, false);
+					Skip (skip);
 				} else {
 					throw new InvalidOperationException ("Buffer capacity insufficient for write operation. " +
 						"Write a smaller quantity relative to the capacity to avoid this.");
@@ -317,17 +317,15 @@ namespace RingByteBuffer
 		/// Skipped data is non-recoverable; state is not persisted.
 		/// </summary>
 		/// <param name="count">Number of bytes to skip ahead.</param>
-		/// <param name="throwOnInsufficient">Throw an exception if the offset specified exceeds the available data.</param>
 		/// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
 		/// <exception cref="ArgumentException">Ringbuffer does not have enough data in it.</exception>
-		public int Skip (int count, bool throwOnInsufficient = true) {
-			if (count < 0) throw new ArgumentOutOfRangeException("count", "Negative count specified. Count must be positive.");
-			if (count > _length) {
-				if (throwOnInsufficient) {
-					throw new ArgumentException("Count specified exceeds data available.", "count");
-				}
-				count = _length;
+		public int Skip (int count) {
+			if (count < 0) {
+				throw new ArgumentOutOfRangeException ("count", "Negative count specified. Count must be positive.");
+			} else if (count > _length) {
+				throw new ArgumentException("Count specified exceeds data available.", "count");
 			}
+
 			var skipped = count;
 
 			if (_head + count > _capacity) {
@@ -343,21 +341,14 @@ namespace RingByteBuffer
 		}
 
 		/// <summary>
-		/// Set every byte in the internal array (buffer) to zero. 
-		/// Can be used as a security feature, or convenience method for resetting state.
+		/// Reset the ringbuffer to an empty state. 
+		/// Sets every byte in the internal array (buffer) to zero.
 		/// </summary>
-		public void Erase () {
+		public void Reset () {
 			Array.Clear (_buffer, 0, _buffer.Length);
 			_head = 0;
 			_tail = 0;
 			_length = 0;
-		}
-
-		/// <summary>
-		/// Reset the ringbuffer to an empty state.
-		/// </summary>
-		public void Reset () {
-			Erase ();
 		}
 
 		/// <summary>

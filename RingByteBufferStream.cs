@@ -162,7 +162,7 @@ namespace RingByteBuffer
 		/// <inheritdoc/>
         protected override void Dispose(bool disposing)
         {
-			_ringBuffer.Erase ();
+			_ringBuffer.Reset ();
             base.Dispose(disposing);
         }
     }
