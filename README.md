@@ -8,10 +8,10 @@ Classic ringbuffer with optional .NET BCL System.IO.Stream interface, in C#
 How to use it
 -------------
 
-Buffer is available through use of RingByteBuffer or RingByteBufferStream.
+Buffer is available through use of RingBuffer or RingBufferStream.
 It supports overwriting instead of throwing exceptions when capacity is filled, for use-cases such as multimedia streaming.
 
-RingByteBuffer methods:
+RingBuffer methods:
 
 
 +  	ctor: (int capacity, bool allowOverwrite = false) / (int capacity, byte[] buffer, bool allowOverwrite = false)
@@ -30,7 +30,7 @@ It has these properties:
 + 	Length
 + 	Spare
 
-RingByteBufferStream exposes these methods through common System.IO.Stream methods, e.g. Write is mapped to Put
+RingBufferStream exposes these methods through common System.IO.Stream methods, e.g. Write is mapped to Put
 It also exposes the PutFrom and TakeTo performance methods. Use of these methods allows no-copy transfers between streams.
 
 *****
