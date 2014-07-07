@@ -92,7 +92,7 @@ namespace RingByteBuffer
 				throw new ArgumentException ("Initialisation data length exceeds allocated capacity.", "buffer");
 			}
 
-			Buffer.BlockCopy(buffer, 0, _buffer, 0, buffer.Length);
+            buffer.CopyBytes(0, _buffer, 0, buffer.Length);
 			_tail += buffer.Length;
 			_length += _tail;
 		}
@@ -121,7 +121,7 @@ namespace RingByteBuffer
 				throw new ArgumentOutOfRangeException ("count", "Negative count specified. Count must be positive.");
 			} else if (_length + count > _capacity) {
 				if (_overwiteable) {
-					int skip = (_length + count) - _capacity;
+					var skip = (_length + count) - _capacity;
 					Skip (skip);
 				} else {
 					throw new InvalidOperationException ("Buffer capacity insufficient for write operation. " +
@@ -136,13 +136,13 @@ namespace RingByteBuffer
 
 			if (_tail + count >= _capacity) {
 				var chunkSize = _capacity - _tail;
-				Buffer.BlockCopy(buffer, offset, _buffer, _tail, chunkSize);
+                buffer.CopyBytes(offset, _buffer, _tail, chunkSize);
 				_tail = 0;
 				offset += chunkSize;
 				count -= chunkSize;
 				_length += chunkSize;
 			}
-			Buffer.BlockCopy(buffer, offset, _buffer, _tail, count);
+            buffer.CopyBytes(offset, _buffer, _tail, count);
 			_tail += count;
 			_length += count;
 		}
@@ -256,13 +256,13 @@ namespace RingByteBuffer
 
 			if (_head + count >= _capacity) {
 				var chunkSize = _capacity - _head;
-				Buffer.BlockCopy(_buffer, _head, buffer, offset, chunkSize);
+                _buffer.CopyBytes(_head, buffer, offset, chunkSize);
 				_head = 0;
 				offset += chunkSize;
 				count -= chunkSize;
 				_length -= chunkSize;
 			}
-			Buffer.BlockCopy(_buffer, _head, buffer, offset, count);
+            _buffer.CopyBytes(_head, buffer, offset, count);
 			_head += count;
 			_length -= count;
 		}
