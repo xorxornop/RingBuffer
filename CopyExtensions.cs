@@ -1,5 +1,5 @@
 ﻿//
-//  Copyright 2013  Matthew Ducker
+//  Copyright 2014  Matthew Ducker
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -17,8 +17,16 @@ using System;
 
 namespace RingByteBuffer
 {
-    public static class ExtensionMethods
+    /// <summary>
+    ///     Extension methods for copying byte arrays.
+    /// </summary>
+    public static class CopyExtensions
     {
+        /// <summary>
+        ///     Produce a deep copy (by value) of <paramref name="data"/> array.
+        /// </summary>
+        /// <param name="data">Array to produce a copy of.</param>
+        /// <returns>Copy of <paramref name="data"/> array.</returns>
         public static byte[] DeepCopy(this byte[] data)
         {
             if (data == null) {
@@ -29,10 +37,22 @@ namespace RingByteBuffer
             return dst;
         }
 
+        /// <summary>
+        ///     Copy bytes from <paramref name="src"/> into <paramref name="dst"/>.
+        /// </summary>
+        /// <param name="src">The source byte array.</param>
+        /// <param name="srcOffset">
+        ///     The offset in <paramref name="src"/> at which the source data begins.
+        /// </param>
+        /// <param name="length">The number of bytes to copy.</param>
+        /// <param name="dst">The destination byte array.</param>
+        /// <param name="dstOffset">
+        ///     The offset in <paramref name="dst"/> at which to copy into.
+        /// </param>
         public static void CopyBytes(this byte[] src, int srcOffset, byte[] dst, int dstOffset, int length)
         {
 #if INCLUDE_UNSAFE
-            const int unsafeLimit = 1024;
+            const int unsafeLimit = 128;
             if (length > unsafeLimit) {
                 if (srcOffset + length > src.Length || dstOffset + length > dst.Length) {
                     throw new ArgumentException(
@@ -49,7 +69,7 @@ namespace RingByteBuffer
                 Array.Copy(src, srcOffset, dst, dstOffset, length);
             }
 #else
-            const int bufferBlockCopyLimit = 8192;
+            const int bufferBlockCopyLimit = 1024;
             if (length > bufferBlockCopyLimit) {
                 Buffer.BlockCopy(src, srcOffset, dst, dstOffset, length);
             } else {
@@ -59,6 +79,12 @@ namespace RingByteBuffer
         }
 
 #if INCLUDE_UNSAFE
+        /// <summary>
+        ///     Copy data from <paramref name="src"/> into <paramref name="dst"/>.
+        /// </summary>
+        /// <param name="src">Pointer to source of data.</param>
+        /// <param name="dst">Pointer to destination for data.</param>
+        /// <param name="length">Length of data to copy in bytes.</param>
         internal static unsafe void CopyMemory(byte* dst, byte* src, int length)
         {
             while (length >= 16) {
