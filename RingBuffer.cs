@@ -31,36 +31,36 @@ namespace RingByteBuffer
     ///     Makes efficient use of memory.
     ///     Ensure initialised capacity can hold typical use case requirement with some overflow tolerance.
     /// </remarks>
-    public class RingBuffer
+    public abstract class RingBuffer
     {
-        private readonly byte[] _buffer;
-        private readonly int _capacity;
-        private int _head, _tail;
-        private int _length;
-        private readonly bool _overwriteable;
+        protected byte[] Buffer;
+        protected readonly int Capacity;
+        protected int BufferHeadOffset = 0, BufferTailOffset;
+        protected int ContentLength;
+        protected readonly bool CanOverwrite;
 
         /// <summary>
         ///     Maximum data possible to be stored.
         /// </summary>
-        public int Capacity
+        public int MaximumCapacity
         {
-            get { return _capacity; }
+            get { return Capacity; }
         }
 
         /// <summary>
         ///     Length of data stored.
         /// </summary>
-        public int Length
+        public virtual int CurrentLength
         {
-            get { return _length; }
+            get { return ContentLength; }
         }
 
         /// <summary>
         ///     Capacity not filled with data.
         /// </summary>
-        public int Spare
+        public virtual int Spare
         {
-            get { return _capacity - _length; }
+            get { return Capacity - ContentLength; }
         }
 
         /// <summary>
@@ -69,50 +69,41 @@ namespace RingByteBuffer
         /// <value><c>true</c> if overwritable; otherwise, <c>false</c>.</value>
         public bool Overwritable
         {
-            get { return _overwriteable; }
+            get { return CanOverwrite; }
         }
+
 
         /// <summary>
         ///     Initialises a new instance of a <see cref="RingBuffer" />.
         /// </summary>
-        /// <param name="capacity">Maximum required storage capability of the ringbuffer.</param>
-        /// <param name="allowOverwrite">If set to <c>true</c> overwrite will be allowed, otherwise <c>false</c>.</param>
-        public RingBuffer(int capacity, bool allowOverwrite = false)
-        {
-            if (capacity < 2) {
-                throw new ArgumentException("Capacity must be at least 2 bytes.");
-            }
-            _capacity = capacity;
-            _buffer = new byte[capacity];
-            _overwriteable = allowOverwrite;
-        }
-
-        /// <summary>
-        ///     Initialises a new instance of a <see cref="RingBuffer" />.
-        /// </summary>
-        /// <param name="capacity">Maximum required storage capability of the ringbuffer.</param>
+        /// <param name="maximumCapacity">Maximum required storage capability of the ringbuffer.</param>
         /// <param name="buffer">Data to initialise the ringbuffer with.</param>
-        /// <param name="allowOverwrite">If set to <c>true</c> allow overwrite.</param>
+        /// <param name="allowOverwrite">If set to <c>true</c> overwrite will be allowed, otherwise <c>false</c>.</param>
         /// <exception cref="ArgumentNullException">Supplied data array is null.</exception>
         /// <exception cref="ArgumentException">
-        ///     Capacity is less than 2 bytes, or <paramref name="buffer"/> length exceeds <paramref name="capacity"/>.
+        ///     Capacity is less than 2 bytes, or <paramref name="buffer"/> length exceeds <paramref name="maximumCapacity"/>.
         /// </exception>
-        public RingBuffer(int capacity, byte[] buffer, bool allowOverwrite = false)
-            : this(capacity, allowOverwrite)
+        protected RingBuffer(int maximumCapacity, byte[] buffer = null, bool allowOverwrite = false)
         {
-            if (capacity < 2) {
+            if (maximumCapacity < 2) {
                 throw new ArgumentException("Capacity must be at least 2 bytes.");
             }
-            if (buffer == null) {
-                throw new ArgumentNullException("buffer");
-            }
-            if (buffer.Length > capacity) {
+            if (buffer != null && buffer.Length > maximumCapacity) {
                 throw new ArgumentException("Initialisation data length exceeds allocated capacity.", "buffer");
             }
 
-            buffer.CopyBytes(0, _buffer, 0, buffer.Length);
-            _tail += buffer.Length;
-            _length += _tail;
+            Capacity = maximumCapacity;
+            CanOverwrite = allowOverwrite;
+            Buffer = new byte[CeilingNextPowerOfTwo(maximumCapacity)];
+
+            if (buffer != null) {
+                buffer.CopyBytes(0, Buffer, 0, buffer.Length);
+                BufferTailOffset += buffer.Length;
+            } else {
+                BufferTailOffset = 0;
+            }
+
+            ContentLength = BufferTailOffset;
         }
 
 
@@ -120,30 +111,15 @@ namespace RingByteBuffer
         ///     Puts the single byte <paramref name="input"/> in the ringbuffer.
         /// </summary>
         /// <param name="input">Byte to write to the ringbuffer.</param>
-        /// <exception cref="InvalidOperationException">Ringbuffer has too much data in it.</exception>
-        public void Put(byte input)
-        {
-            if (_length + 1 > _capacity) {
-                if (_overwriteable) {
-                    Skip(1);
-                } else {
-                    throw new InvalidOperationException("Buffer capacity insufficient for write operation.");
-                }
-            }
-
-            _buffer[_tail++] = input;
-            if (_tail == _capacity) {
-                _tail = 0;
-            }
-            _length++;
-        }
+        /// <exception cref="InvalidOperationException">Ringbuffer has too much in it.</exception>
+        public abstract void Put(byte input);
 
         /// <summary>
         ///     Put the data in <paramref name="buffer"/> in its entirety into the ringbuffer.
         /// </summary>
         /// <param name="buffer">Buffer to take input bytes from.</param>
         /// <exception cref="ArgumentOutOfRangeException">Offset or count is negative.</exception>
-        /// <exception cref="InvalidOperationException">Ringbuffer has too much data in it.</exception>
+        /// <exception cref="InvalidOperationException">Ringbuffer has too much in it.</exception>
         public void Put(byte[] buffer)
         {
             Put(buffer, 0, buffer.Length);
@@ -156,23 +132,8 @@ namespace RingByteBuffer
         /// <param name="offset">Offset in <paramref name="buffer"/> to take bytes from.</param>
         /// <param name="count">Number of bytes to put into the ringbuffer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Offset or count is negative.</exception>
-        /// <exception cref="InvalidOperationException">Ringbuffer has too much data in it.</exception>
-        public void Put(byte[] buffer, int offset, int count)
-        {
-            if (offset < 0) {
-                throw new ArgumentOutOfRangeException("offset", "Negative offset specified. Offset must be positive.");
-            }
-            PutFromInitial(count);
-
-            while (count > 0) {
-                int chunk = Math.Min(_capacity - _tail, count);
-                buffer.CopyBytes(offset, _buffer, _tail, chunk);
-                _tail = (_tail + chunk == _capacity) ? 0 : _tail + chunk;
-                _length += chunk;
-                offset += chunk;
-                count -= chunk;
-            }
-        }
+        /// <exception cref="InvalidOperationException">Ringbuffer has too much in it.</exception>
+        public abstract void Put(byte[] buffer, int offset, int count);
 
         /// <summary>
         ///     Reads <paramref name="count"/> bytes from <paramref name="source"/>  
@@ -182,26 +143,8 @@ namespace RingByteBuffer
         /// <param name="source">Stream to read bytes from to put into the ringbuffer.</param>
         /// <param name="count">Number of bytes to put into the ringbuffer.</param>
         /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
-        /// <exception cref="InvalidOperationException">Ringbuffer has too much data in it.</exception>
-        public void PutFrom(Stream source, int count)
-        {
-            PutFromInitial(count);
-
-            while (count > 0) {
-                int chunk = Math.Min(_capacity - _tail, count);
-                int chunkIn = 0;
-                while (chunkIn < chunk) {
-                    var iterIn = source.Read(_buffer, _tail, chunkIn - chunk);
-                    if (iterIn == 0) {
-                        throw new EndOfStreamException();
-                    }
-                    chunkIn += iterIn;
-                }
-                _tail = (_tail + chunk == _capacity) ? 0 : _tail + chunk;
-                _length += chunk;
-                count -= chunk;
-            }
-        }
+        /// <exception cref="InvalidOperationException">Ringbuffer has too much in it.</exception>
+        public abstract void PutFrom(Stream source, int count);
 
         /// <summary>
         ///     Reads <paramref name="count"/> bytes from <paramref name="source"/> asynchronously 
@@ -212,70 +155,14 @@ namespace RingByteBuffer
         /// <param name="count">Number of bytes to put into the ringbuffer.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
-        /// <exception cref="InvalidOperationException">Ringbuffer has too much data in it.</exception>
-        public async Task PutFromAsync(Stream source, int count, CancellationToken cancellationToken)
-        {
-            PutFromInitial(count);
-
-            while (count > 0) {
-                int chunk = Math.Min(_capacity - _tail, count);
-                int chunkIn = 0;
-                while (chunkIn < chunk) {
-                    int iterIn = await source.ReadAsync(_buffer, _tail, chunkIn - chunk, cancellationToken);
-                    if (cancellationToken.IsCancellationRequested) {
-                        return;
-                    }
-                    if (iterIn == 0) {
-                        throw new EndOfStreamException();
-                    }
-                    chunkIn += iterIn;
-                }
-                _tail = (_tail + chunk == _capacity) ? 0 : _tail + chunk;
-                _length += chunk;
-                count -= chunk;
-            }
-        }
-
-        /// <summary>
-        ///     Verifies validity of <paramref name="count"/> parameter value.
-        /// </summary>
-        /// <param name="count">Number of bytes to put/write.</param>
-        /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
-        /// <exception cref="ArgumentException">Ringbuffer has too much in it.</exception>
-        protected void PutFromInitial(int count)
-        {
-            if (count < 0) {
-                throw new ArgumentOutOfRangeException("count", "Negative count specified. Count must be positive.");
-            }
-            if (_length + count > _capacity) {
-                if (_overwriteable) {
-                    int skip = _capacity - (_length + count);
-                    Skip(skip);
-                } else {
-                    throw new InvalidOperationException("Buffer capacity insufficient for write operation. " +
-                                                        "Write a smaller quantity relative to the capacity to avoid this.");
-                }
-            }
-        }
+        /// <exception cref="InvalidOperationException">Ringbuffer has too much in it.</exception>
+        public abstract Task PutFromAsync(Stream source, int count, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Take a single byte from the ringbuffer.
         /// </summary>
-        /// <exception cref="InvalidOperationException">Ringbuffer does not have enough data in it.</exception>
-        public byte Take()
-        {
-            if (_length == 0) {
-                throw new InvalidOperationException("Buffer contents insufficient for read operation.");
-            }
-
-            byte output = _buffer[_head++];
-            if (_head == _capacity) {
-                _head = 0;
-            }
-            _length--;
-
-            return output;
-        }
+        /// <exception cref="InvalidOperationException">Ringbuffer does not have enough in it.</exception>
+        public abstract byte Take();
 
         /// <summary>
         ///     Takes <paramref name="count"/> bytes from the ringbuffer 
@@ -283,6 +170,8 @@ namespace RingByteBuffer
         /// </summary>
         /// <param name="count">Quantity of bytes to take.</param>
         /// <returns>Data from the ringbuffer.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Offset or count is negative.</exception>
+        /// <exception cref="ArgumentException">Ringbuffer does not have enough in it.</exception>
         public byte[] Take(int count)
         {
             if (count < 0) 
@@ -291,7 +180,7 @@ namespace RingByteBuffer
                 return new byte[0]; 
 
             var output = new byte[count];
-            Take(output);
+            Take(output, 0, count);
             return output;
         }
 
@@ -299,6 +188,10 @@ namespace RingByteBuffer
         ///     Takes bytes from the ringbuffer as necessary to fill <paramref name="buffer"/>.
         /// </summary>
         /// <param name="buffer">Buffer to fill with bytes taken from the ringbuffer.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Offset or count is negative.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Ringbuffer does not have enough in it, or the destination <paramref name="buffer"/> is too small.
+        /// </exception>
         public void Take(byte[] buffer)
         {
             Take(buffer, 0, buffer.Length);
@@ -313,27 +206,9 @@ namespace RingByteBuffer
         /// <param name="count">Quantity of bytes to read into <paramref name="buffer"/>.</param>
         /// <exception cref="ArgumentOutOfRangeException">Offset or count is negative.</exception>
         /// <exception cref="ArgumentException">
-        ///     Ringbuffer does not have enough data in it, or the destination <paramref name="buffer"/> is too small.
+        ///     Ringbuffer does not have enough in it, or the destination <paramref name="buffer"/> is too small.
         /// </exception>
-        public void Take(byte[] buffer, int offset, int count)
-        {
-            if (offset < 0) {
-                throw new ArgumentOutOfRangeException("offset", "Negative offset specified. Offsets must be positive.");
-            }
-            TakeCheck(count);
-            if (buffer.Length < offset + count) {
-                throw new ArgumentException("Destination array too small for requested output.");
-            }
-
-            while (count > 0) {
-                int chunk = Math.Min(_capacity - _head, count);
-                _buffer.CopyBytes(_head, buffer, offset, chunk);
-                _head = (_head + chunk == _capacity) ? 0 : _head + count;
-                _length -= chunk;
-                offset += chunk;
-                count -= chunk;
-            }
-        }
+        public abstract void Take(byte[] buffer, int offset, int count);
 
         /// <summary>
         ///     Takes <paramref name="count"/> bytes directly from the 
@@ -343,20 +218,8 @@ namespace RingByteBuffer
         /// <param name="destination">Stream to write bytes to that are taken from the ringbuffer.</param>
         /// <param name="count">Number of bytes to read into <paramref name="destination"/>.</param>
         /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
-        /// <exception cref="ArgumentException">Ringbuffer does not have enough data in it.</exception>
-        public void TakeTo(Stream destination, int count)
-        {
-            TakeCheck(count);
-
-            while (count > 0) {
-                int chunk = Math.Min(_capacity - _head, count);
-
-                destination.Write(_buffer, _head, chunk);
-                _head = (_head + chunk == _capacity) ? 0 : _head + count;
-                _length -= chunk;
-                count -= chunk;
-            }
-        }
+        /// <exception cref="ArgumentException">Ringbuffer does not have enough in it.</exception>
+        public abstract void TakeTo(Stream destination, int count);
 
         /// <summary>
         ///     Takes <paramref name="count"/> bytes directly from the 
@@ -367,39 +230,8 @@ namespace RingByteBuffer
         /// <param name="count">Number of bytes to read into <paramref name="destination"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
-        /// <exception cref="ArgumentException">Ringbuffer does not have enough data in it.</exception>
-        public async Task TakeToAsync(Stream destination, int count, CancellationToken cancellationToken)
-        {
-            TakeCheck(count);
-
-            while (count > 0) {
-                int chunk = Math.Min(_capacity - _head, count);
-                await destination.WriteAsync(_buffer, _head, chunk, cancellationToken);
-                if (cancellationToken.IsCancellationRequested) {
-                    return;
-                }
-                _head = (_head + chunk == _capacity) ? 0 : _head + count;
-                _length -= chunk;
-                count -= chunk;
-            }
-        }
-
-        /// <summary>
-        ///     Verifies validity of <paramref name="count"/> parameter value.
-        /// </summary>
-        /// <param name="count">Number of bytes to take/read.</param>
-        /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
-        /// <exception cref="ArgumentException">Ringbuffer does not have enough data in it.</exception>
-        protected void TakeCheck(int count)
-        {
-            if (count < 0) {
-                throw new ArgumentOutOfRangeException("count", "Negative count specified. Count must be positive.");
-            }
-            if (count > _length) {
-                throw new ArgumentException("Ringbuffer contents insufficient for take/read operation. " +
-                                            "Request a smaller quantity relative to the capacity to avoid this.", "count");
-            }
-        }
+        /// <exception cref="ArgumentException">Ringbuffer does not have enough in it.</exception>
+        public abstract Task TakeToAsync(Stream destination, int count, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Skips/discards <paramref name="count"/> number of bytes from the ringbuffer.
@@ -410,41 +242,55 @@ namespace RingByteBuffer
         /// </remarks>
         /// <param name="count">Number of bytes to skip ahead.</param>
         /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
-        /// <exception cref="ArgumentException">Ringbuffer does not have enough data in it.</exception>
-        public void Skip(int count)
+        /// <exception cref="ArgumentException">Ringbuffer does not have enough in it.</exception>
+        public virtual void Skip(int count)
         {
             if (count < 0) {
                 throw new ArgumentOutOfRangeException("count", "Negative count specified. Count must be positive.");
             }
-            if (count > _length) {
+            if (count > ContentLength) {
                 throw new ArgumentException("Ringbuffer contents insufficient for operation.", "count");
             }
 
-            // Modular division gives new index positions
-            _head = (_head + count) % _capacity;
-            _tail = (_tail + count) % _capacity;
-            _length -= count;
+            // Modular division gives new offset position
+            BufferHeadOffset = (BufferHeadOffset + count) % Capacity;
+            ContentLength -= count;
         }
 
         /// <summary>
-        ///     Resets the ringbuffer to an empty state - 
-        ///     sets every byte in the internal array (buffer) to zero.
+        ///     Resets the ringbuffer to an empty state, and sets every byte to zero.
         /// </summary>
-        public void Reset()
+        public virtual void Reset()
         {
-            Array.Clear(_buffer, 0, _buffer.Length);
-            _head = 0;
-            _tail = 0;
-            _length = 0;
+            Array.Clear(Buffer, 0, Buffer.Length);
+            BufferHeadOffset = 0;
+            BufferTailOffset = 0;
+            ContentLength = 0;
         }
 
         /// <summary>
         ///     Emits the entire length of the buffer in use. Ringbuffer will be empty after use.
         /// </summary>
         /// <returns>Ringbuffer data.</returns>
-        public byte[] ToArray()
+        public virtual byte[] ToArray()
         {
-            return Take(Length);
+            return Take(ContentLength);
+        }
+
+        /// <summary>
+        /// Calculate the next power of 2, greater than or equal to x.
+        /// </summary>
+        /// <param name="x">Value to round up</param>
+        /// <returns>The next power of 2 from x inclusive</returns>
+        public static int CeilingNextPowerOfTwo(int x)
+        {
+            var result = 2;
+
+            while (result < x) {
+                result <<= 1;
+            }
+
+            return result;
         }
     }
 }

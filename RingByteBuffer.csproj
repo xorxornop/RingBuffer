@@ -44,10 +44,12 @@
     <DefineConstants>INCLUDE_UNSAFE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ConcurrentRingBuffer.cs" />
     <Compile Include="CopyExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RingBuffer.cs" />
     <Compile Include="RingBufferStream.cs" />
+    <Compile Include="SequentialRingBuffer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
 </Project>
