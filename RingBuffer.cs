@@ -142,9 +142,40 @@ namespace RingByteBuffer
         /// </summary>
         /// <param name="source">Stream to read bytes from to put into the ringbuffer.</param>
         /// <param name="count">Number of bytes to put into the ringbuffer.</param>
+        /// <returns>
+        ///     Number of bytes actually put into the ringbuffer. 
+        ///     If less than <paramref name="count"/>, end of <paramref name="source"/> was found.
+        /// </returns>
         /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
         /// <exception cref="InvalidOperationException">Ringbuffer has too much in it.</exception>
-        public abstract void PutFrom(Stream source, int count);
+        public abstract int PutFrom(Stream source, int count);
+
+        /// <summary>
+        ///     Reads <paramref name="count"/> bytes from <paramref name="source"/>  
+        ///     and puts them directly into the ringbuffer. 
+        ///     Avoids overhead of unnecessary copying.
+        /// </summary>
+        /// <param name="source">Stream to read bytes from to put into the ringbuffer.</param>
+        /// <param name="count">Number of bytes to put into the ringbuffer.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
+        /// <exception cref="InvalidOperationException">Ringbuffer has too much in it.</exception>
+        public abstract void PutExactlyFrom(Stream source, int count);
+
+        /// <summary>
+        ///     Reads up to <paramref name="count"/> bytes from <paramref name="source"/> asynchronously 
+        ///     and puts them directly into the ringbuffer. 
+        ///     Avoids overhead of unnecessary copying.
+        /// </summary>
+        /// <param name="source">Stream to read bytes from to put into the ringbuffer.</param>
+        /// <param name="count">Number of bytes to put into the ringbuffer.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>
+        ///     Number of bytes actually put into the ringbuffer. 
+        ///     If less than <paramref name="count"/>, end of <paramref name="source"/> was found.
+        /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
+        /// <exception cref="InvalidOperationException">Ringbuffer has too much in it.</exception>
+        public abstract Task<int> PutFromAsync(Stream source, int count, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Reads <paramref name="count"/> bytes from <paramref name="source"/> asynchronously 
@@ -156,7 +187,7 @@ namespace RingByteBuffer
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <exception cref="ArgumentOutOfRangeException">Count is negative.</exception>
         /// <exception cref="InvalidOperationException">Ringbuffer has too much in it.</exception>
-        public abstract Task PutFromAsync(Stream source, int count, CancellationToken cancellationToken);
+        public abstract Task PutExactlyFromAsync(Stream source, int count, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Take a single byte from the ringbuffer.

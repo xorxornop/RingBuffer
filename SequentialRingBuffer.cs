@@ -55,7 +55,31 @@ namespace RingByteBuffer
         }
 
         /// <inheritdoc />
-        public override void PutFrom(Stream source, int count)
+        public override int PutFrom(Stream source, int count)
+        {
+            PutInitial(count);
+
+            int remaining = count;
+            while (remaining > 0) {
+                int chunk = Math.Min(Capacity - BufferTailOffset, remaining);
+                int chunkIn = 0;
+                while (chunkIn < chunk) {
+                    var iterIn = source.Read(Buffer, BufferTailOffset, chunk - chunkIn);
+                    if (iterIn < 1) {
+                        throw new EndOfStreamException();
+                    }
+                    chunkIn += iterIn;
+                }
+                BufferTailOffset = (BufferTailOffset + chunk == Capacity) ? 0 : BufferTailOffset + chunk;
+                ContentLength += chunk;
+                remaining -= chunk;
+            }
+
+            return count - remaining;
+        }
+
+        /// <inheritdoc />
+        public override void PutExactlyFrom(Stream source, int count)
         {
             PutInitial(count);
 
@@ -76,10 +100,35 @@ namespace RingByteBuffer
         }
 
         /// <inheritdoc />
-        public override async Task PutFromAsync(Stream source, int count, CancellationToken cancellationToken)
+        public override async Task<int> PutFromAsync(Stream source, int count, CancellationToken cancellationToken)
         {
             PutInitial(count);
+            int remaining = count;
+            while (remaining > 0) {
+                int chunk = Math.Min(Capacity - BufferTailOffset, remaining);
+                int chunkIn = 0;
+                while (chunkIn < chunk) {
+                    int iterIn = await source.ReadAsync(Buffer, BufferTailOffset, chunk - chunkIn, cancellationToken);
+                    if (cancellationToken.IsCancellationRequested) {
+                        return count - remaining;
+                    }
+                    if (iterIn < 1) {
+                        throw new EndOfStreamException();
+                    }
+                    chunkIn += iterIn;
+                }
+                BufferTailOffset = (BufferTailOffset + chunk == Capacity) ? 0 : BufferTailOffset + chunk;
+                ContentLength += chunk;
+                remaining -= chunk;
+            }
 
+            return count - remaining;
+        }
+
+        /// <inheritdoc />
+        public override async Task PutExactlyFromAsync(Stream source, int count, CancellationToken cancellationToken)
+        {
+            PutInitial(count);
             while (count > 0) {
                 int chunk = Math.Min(Capacity - BufferTailOffset, count);
                 int chunkIn = 0;
@@ -88,7 +137,7 @@ namespace RingByteBuffer
                     if (cancellationToken.IsCancellationRequested) {
                         return;
                     }
-                    if (iterIn == 0) {
+                    if (iterIn < 1) {
                         throw new EndOfStreamException();
                     }
                     chunkIn += iterIn;

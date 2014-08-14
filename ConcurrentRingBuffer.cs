@@ -131,7 +131,35 @@ namespace RingByteBuffer
         }
 
         /// <inheritdoc />
-        public override void PutFrom(Stream source, int count)
+        public override int PutFrom(Stream source, int count)
+        {
+            // Local state (shadow of shared) for operation
+            int localBufferTailOffset;
+            // Read current shared state into locals, determine post-op state, and update shared state to it
+            PutAllocate(out localBufferTailOffset, count);
+            int remaining = count;
+            bool earlyFinish = false;
+            while (remaining > 0 || !earlyFinish) {
+                int chunk = Math.Min(Capacity - localBufferTailOffset, remaining);
+                int chunkIn = 0;
+                while (chunkIn < chunk) {
+                    int iterIn = source.Read(Buffer, localBufferTailOffset, chunk - chunkIn);
+                    if (iterIn < 1) {
+                        earlyFinish = true;
+                    }
+                    chunkIn += iterIn;
+                }
+                if (earlyFinish) continue;
+                localBufferTailOffset = (localBufferTailOffset + chunk == Capacity) ? 0 : localBufferTailOffset + chunk;
+                remaining -= chunk;
+            }
+            PutPublish(localBufferTailOffset, count - remaining);
+
+            return count - remaining;
+        }
+
+        /// <inheritdoc />
+        public override void PutExactlyFrom(Stream source, int count)
         {
             // Local state (shadow of shared) for operation
             int localBufferTailOffset;
@@ -155,7 +183,35 @@ namespace RingByteBuffer
         }
 
         /// <inheritdoc />
-        public override async Task PutFromAsync(Stream source, int count, CancellationToken cancellationToken)
+        public override async Task<int> PutFromAsync(Stream source, int count, CancellationToken cancellationToken)
+        {
+            // Local state (shadow of shared) for operation
+            int localBufferTailOffset;
+            // Read current shared state into locals, determine post-op state, and update shared state to it
+            PutAllocate(out localBufferTailOffset, count);
+            int remaining = count;
+            bool earlyFinish = false;
+            while (remaining > 0 || !earlyFinish) {
+                int chunk = Math.Min(Capacity - localBufferTailOffset, remaining);
+                int chunkIn = 0;
+                while (chunkIn < chunk) {
+                    int iterIn = await source.ReadAsync(Buffer, localBufferTailOffset, chunk - chunkIn, cancellationToken);
+                    if (iterIn < 1 || cancellationToken.IsCancellationRequested) {
+                        earlyFinish = true;
+                    }
+                    chunkIn += iterIn;
+                }
+                if (earlyFinish) continue;
+                localBufferTailOffset = (localBufferTailOffset + chunk == Capacity) ? 0 : localBufferTailOffset + chunk;
+                remaining -= chunk;
+            }
+            PutPublish(localBufferTailOffset, count - remaining);
+
+            return count - remaining;
+        }
+
+        /// <inheritdoc />
+        public override async Task PutExactlyFromAsync(Stream source, int count, CancellationToken cancellationToken)
         {
             // Local state (shadow of shared) for operation
             int localBufferTailOffset;
@@ -170,7 +226,7 @@ namespace RingByteBuffer
                     if (cancellationToken.IsCancellationRequested) {
                         return;
                     }
-                    if (iterIn == 0) {
+                    if (iterIn < 1) {
                         throw new EndOfStreamException();
                     }
                     chunkIn += iterIn;
@@ -232,8 +288,7 @@ namespace RingByteBuffer
         {
             bool lockTaken = false;
             try {
-                Lock.Enter(ref lockTaken); //Lock.TryEnter(10, ref lockTaken);
-                Debug.Assert(tailOffset == BufferTailOffsetDirty);
+                Lock.Enter(ref lockTaken);
                 BufferTailOffset = tailOffset;
                 ContentLength += count;
                 PendingPut = false;
@@ -371,7 +426,6 @@ namespace RingByteBuffer
             bool lockTaken = false;
             try {
                 Lock.Enter(ref lockTaken);
-                Debug.Assert(headOffset == BufferHeadOffsetDirty);
                 BufferHeadOffset = headOffset;
                 ContentLength -= count;
                 PendingTake = false;
