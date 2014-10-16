@@ -32,9 +32,11 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <DocumentationFile>bin\Release\RingByteBuffer.xml</DocumentationFile>
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseWithUnsafe|AnyCPU'">
-    <OutputPath>bin\ReleaseWithUnsafe\</OutputPath>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseUnsafe|AnyCPU' ">
+    <OutputPath>bin\ReleaseUnsafe\</OutputPath>
     <DocumentationFile>bin\Release\RingByteBuffer.xml</DocumentationFile>
     <Optimize>true</Optimize>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -42,14 +44,23 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefineConstants>INCLUDE_UNSAFE</DefineConstants>
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ConcurrentRingBuffer.cs" />
-    <Compile Include="CopyExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RingBuffer.cs" />
     <Compile Include="RingBufferStream.cs" />
     <Compile Include="SequentialRingBuffer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="PerfCopy">
+      <HintPath>packages\PerfCopy.1.1.0\lib\PerfCopy.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
 </Project>

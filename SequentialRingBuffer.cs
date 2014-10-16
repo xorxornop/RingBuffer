@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using PerfCopy;
 
 namespace RingByteBuffer
 {
@@ -198,7 +199,7 @@ namespace RingByteBuffer
 
             while (count > 0) {
                 int chunk = Math.Min(Capacity - BufferHeadOffset, count);
-                Buffer.CopyBytes(BufferHeadOffset, buffer, offset, chunk);
+                buffer.CopyBytes(offset, Buffer, BufferTailOffset, chunk);
                 BufferHeadOffset = (BufferHeadOffset + chunk == Capacity) ? 0 : BufferHeadOffset + chunk;
                 ContentLength -= chunk;
                 offset += chunk;

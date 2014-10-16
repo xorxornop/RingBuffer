@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using PerfCopy;
 
 namespace RingByteBuffer
 {
@@ -52,7 +53,8 @@ namespace RingByteBuffer
                     localValue = ContentLength;
                 }
                 finally {
-                    if (lockTaken) Lock.Exit(false);
+                    if (lockTaken) 
+                        Lock.Exit(false);
                 }
                 return localValue;
             }
@@ -73,7 +75,8 @@ namespace RingByteBuffer
                     localValue = Capacity - ContentLength;
                 }
                 finally {
-                    if (lockTaken) Lock.Exit(false);
+                    if (lockTaken) 
+                        Lock.Exit(false);
                 }
                 return localValue;
             }
@@ -104,13 +107,18 @@ namespace RingByteBuffer
                 ContentLength++;
             }
             finally {
-                if (lockTaken) Lock.Exit(false);
+                if (lockTaken) 
+                    Lock.Exit(false);
             }
         }
 
         /// <inheritdoc />
         public override void Put(byte[] buffer, int offset, int count)
         {
+            if (offset < 0) {
+                throw new ArgumentOutOfRangeException("offset", "Negative offset specified. Offset must be positive.");
+            }
+            
             // Local state (shadow of shared) for operation
             int localBufferTailOffset;
             // Read current shared state into locals, determine post-op state, and update shared state to it
@@ -145,7 +153,8 @@ namespace RingByteBuffer
                     }
                     chunkIn += iterIn;
                 }
-                if (earlyFinish) continue;
+                if (earlyFinish) 
+                    continue;
                 localBufferTailOffset = (localBufferTailOffset + chunk == Capacity) ? 0 : localBufferTailOffset + chunk;
                 remaining -= chunk;
             }
@@ -197,7 +206,8 @@ namespace RingByteBuffer
                     }
                     chunkIn += iterIn;
                 }
-                if (earlyFinish) continue;
+                if (earlyFinish) 
+                    continue;
                 localBufferTailOffset = (localBufferTailOffset + chunk == Capacity) ? 0 : localBufferTailOffset + chunk;
                 remaining -= chunk;
             }
@@ -312,7 +322,8 @@ namespace RingByteBuffer
                 ContentLength--;
             }
             finally {
-                if (lockTaken) Lock.Exit(false);
+                if (lockTaken) 
+                    Lock.Exit(false);
             }
 
             return output;
@@ -344,6 +355,10 @@ namespace RingByteBuffer
         /// <inheritdoc />
         public override void TakeTo(Stream destination, int count)
         {
+            if (count < 0) {
+                throw new ArgumentOutOfRangeException("count", "Negative length specified. Length must be positive.");
+            }
+
             int localBufferHeadOffset;
             TakeInitial(out localBufferHeadOffset, count);
             int length = count;
@@ -452,7 +467,8 @@ namespace RingByteBuffer
                 ContentLength -= count;
             }
             finally {
-                if (lockTaken) Lock.Exit(false);
+                if (lockTaken) 
+                    Lock.Exit(false);
             }
         }
 
@@ -484,7 +500,8 @@ namespace RingByteBuffer
                 ContentLength = 0;
             }
             finally {
-                if (lockTaken) Lock.Exit(false);
+                if (lockTaken) 
+                    Lock.Exit(false);
             }
         }
 
@@ -502,7 +519,8 @@ namespace RingByteBuffer
                 Reset();
             }
             finally {
-                if (lockTaken) Lock.Exit(false);
+                if (lockTaken) 
+                    Lock.Exit(false);
             }
 
             return buffer;
