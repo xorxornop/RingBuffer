@@ -59,7 +59,6 @@ namespace RingByteBuffer
         public override int PutFrom(Stream source, int count)
         {
             PutInitial(count);
-
             int remaining = count;
             while (remaining > 0) {
                 int chunk = Math.Min(Capacity - BufferTailOffset, remaining);
@@ -83,7 +82,6 @@ namespace RingByteBuffer
         public override void PutExactlyFrom(Stream source, int count)
         {
             PutInitial(count);
-
             while (count > 0) {
                 int chunk = Math.Min(Capacity - BufferTailOffset, count);
                 int chunkIn = 0;
@@ -189,10 +187,10 @@ namespace RingByteBuffer
         /// <inheritdoc />
         public override void Take(byte[] buffer, int offset, int count)
         {
-            TakeInitial(count);
             if (offset < 0) {
                 throw new ArgumentOutOfRangeException("offset", "Negative offset specified. Offsets must be positive.");
             }
+            TakeInitial(count);
             if (buffer.Length < offset + count) {
                 throw new ArgumentException("Destination array too small for requested output.");
             }
@@ -211,7 +209,6 @@ namespace RingByteBuffer
         public override void TakeTo(Stream destination, int count)
         {
             TakeInitial(count);
-
             while (count > 0) {
                 int chunk = Math.Min(Capacity - BufferHeadOffset, count);
 
@@ -226,7 +223,6 @@ namespace RingByteBuffer
         public override async Task TakeToAsync(Stream destination, int count, CancellationToken cancellationToken)
         {
             TakeInitial(count);
-
             while (count > 0) {
                 int chunk = Math.Min(Capacity - BufferHeadOffset, count);
                 await destination.WriteAsync(Buffer, BufferHeadOffset, chunk, cancellationToken);

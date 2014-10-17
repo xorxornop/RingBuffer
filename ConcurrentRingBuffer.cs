@@ -118,15 +118,18 @@ namespace RingByteBuffer
             if (offset < 0) {
                 throw new ArgumentOutOfRangeException("offset", "Negative offset specified. Offset must be positive.");
             }
-            
             // Local state (shadow of shared) for operation
             int localBufferTailOffset;
             // Read current shared state into locals, determine post-op state, and update shared state to it
             PutAllocate(out localBufferTailOffset, count);
+            if (buffer.Length < offset + count) {
+                throw new ArgumentException("Source array too small for requested input.");
+            }
+            
             int length = count;
             while (length > 0) {
                 int chunk = Math.Min(Capacity - localBufferTailOffset, length);
-                buffer.CopyBytes(offset, Buffer, localBufferTailOffset, chunk);
+                buffer.CopyBytes_NoChecks(offset, Buffer, localBufferTailOffset, chunk);
                 localBufferTailOffset = (localBufferTailOffset + chunk == Capacity) ? 0 : localBufferTailOffset + chunk;
                 offset += chunk;
                 length -= chunk;
@@ -280,7 +283,8 @@ namespace RingByteBuffer
                 PendingPut = true;
             }
             finally {
-                if (lockTaken) Lock.Exit(false);
+                if (lockTaken) 
+                    Lock.Exit(false);
             }
         }
 
@@ -300,7 +304,8 @@ namespace RingByteBuffer
                 PendingPut = false;
             }
             finally {
-                if (lockTaken) Lock.Exit(false);
+                if (lockTaken) 
+                    Lock.Exit(false);
             }
         }
 
@@ -335,16 +340,16 @@ namespace RingByteBuffer
             if (offset < 0) {
                 throw new ArgumentOutOfRangeException("offset", "Negative offset specified. Offsets must be positive.");
             }
+            int localBufferHeadOffset;
+            TakeInitial(out localBufferHeadOffset, count);
             if (buffer.Length < offset + count) {
                 throw new ArgumentException("Destination array too small for requested output.");
             }
 
-            int localBufferHeadOffset;
-            TakeInitial(out localBufferHeadOffset, count);
             int length = count;
             while (length > 0) {
                 int chunk = Math.Min(Capacity - localBufferHeadOffset, length);
-                Buffer.CopyBytes(localBufferHeadOffset, buffer, offset, chunk);
+                Buffer.CopyBytes_NoChecks(localBufferHeadOffset, buffer, offset, chunk);
                 localBufferHeadOffset = (localBufferHeadOffset + chunk == Capacity) ? 0 : localBufferHeadOffset + chunk;
                 offset += chunk;
                 length -= chunk;
@@ -355,16 +360,11 @@ namespace RingByteBuffer
         /// <inheritdoc />
         public override void TakeTo(Stream destination, int count)
         {
-            if (count < 0) {
-                throw new ArgumentOutOfRangeException("count", "Negative length specified. Length must be positive.");
-            }
-
             int localBufferHeadOffset;
             TakeInitial(out localBufferHeadOffset, count);
             int length = count;
             while (length > 0) {
                 int chunk = Math.Min(Capacity - localBufferHeadOffset, length);
-
                 destination.Write(Buffer, localBufferHeadOffset, chunk);
                 localBufferHeadOffset = (localBufferHeadOffset + chunk == Capacity) ? 0 : localBufferHeadOffset + chunk;
                 length -= chunk;
@@ -422,7 +422,8 @@ namespace RingByteBuffer
                 PendingTake = true;
             }
             finally {
-                if (lockTaken) Lock.Exit(false);
+                if (lockTaken) 
+                    Lock.Exit(false);
             }
         }
 

@@ -98,7 +98,7 @@ namespace RingByteBuffer
             Buffer = new byte[CeilingNextPowerOfTwo(maximumCapacity)];
 
             if (buffer != null) {
-                buffer.CopyBytes(0, Buffer, 0, buffer.Length);
+                buffer.CopyBytes_NoChecks(0, Buffer, 0, buffer.Length);
                 BufferTailOffset += buffer.Length;
             } else {
                 BufferTailOffset = 0;
@@ -207,7 +207,7 @@ namespace RingByteBuffer
         public byte[] Take(int count)
         {
             if (count < 0) 
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException("count");
             if (count == 0) 
                 return new byte[0]; 
 
@@ -317,7 +317,6 @@ namespace RingByteBuffer
         public static int CeilingNextPowerOfTwo(int x)
         {
             var result = 2;
-
             while (result < x) {
                 result <<= 1;
             }
