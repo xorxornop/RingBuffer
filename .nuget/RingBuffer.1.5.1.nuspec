@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>RingBuffer</id>
+        <version>1.5.1</version>
+        <title>RingByteBuffer</title>
+        <authors>zenith</authors>
+        <owners>zenith</owners>
+        <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
+        <projectUrl>http://github.com/zenith-nz/RingBuffer</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>High performance classic ring/circular buffer (with optional .NET BCL System.IO.Stream interface) for byte data.
+Packaged as a portable class library (PCL).
+
+Asynchronous I/O from streams is supported to boost performance.
+
+Supports concurrent reading and writing, and overwriting (optional).</description>
+        <summary>High performance classic ring/circular buffer for byte data.</summary>
+        <releaseNotes>Hotfix.</releaseNotes>
+        <copyright>Matthew Ducker 2014</copyright>
+        <tags>ring buffer circular ringbuffer performance</tags>
+        <dependencies>
+            <dependency id="PerfCopy" version="1.2.0" />
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="..\bin\ReleaseUnsafe\RingByteBuffer.dll" target="lib\portable-net4+netcore45+wpa81+MonoAndroid1+MonoTouch1\RingByteBuffer.dll" />
+        <file src="..\bin\ReleaseUnsafe\RingByteBuffer.pdb" target="lib\portable-net4+netcore45+wpa81+MonoAndroid1+MonoTouch1\RingByteBuffer.pdb" />
+        <file src="..\bin\ReleaseUnsafe\RingByteBuffer.xml" target="lib\portable-net4+netcore45+wpa81+MonoAndroid1+MonoTouch1\RingByteBuffer.xml" />
+    </files>
+</package>

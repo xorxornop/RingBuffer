@@ -197,7 +197,7 @@ namespace RingByteBuffer
 
             while (count > 0) {
                 int chunk = Math.Min(Capacity - BufferHeadOffset, count);
-                buffer.CopyBytes(offset, Buffer, BufferTailOffset, chunk);
+                Buffer.CopyBytes(BufferHeadOffset, buffer, offset, chunk);
                 BufferHeadOffset = (BufferHeadOffset + chunk == Capacity) ? 0 : BufferHeadOffset + chunk;
                 ContentLength -= chunk;
                 offset += chunk;
