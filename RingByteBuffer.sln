@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RingByteBuffer", "RingByteBuffer.csproj", "{AC576C01-44F5-4A45-9B81-5AFFDC748A6F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RingByteBufferConcurrent", "FullyConcurrent\RingByteBufferConcurrent.csproj", "{456E5C47-9E36-4249-9CED-F02B64965C24}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,6 +20,12 @@ Global
 		{AC576C01-44F5-4A45-9B81-5AFFDC748A6F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AC576C01-44F5-4A45-9B81-5AFFDC748A6F}.ReleaseUnsafe|Any CPU.ActiveCfg = ReleaseUnsafe|Any CPU
 		{AC576C01-44F5-4A45-9B81-5AFFDC748A6F}.ReleaseUnsafe|Any CPU.Build.0 = ReleaseUnsafe|Any CPU
+		{456E5C47-9E36-4249-9CED-F02B64965C24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{456E5C47-9E36-4249-9CED-F02B64965C24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{456E5C47-9E36-4249-9CED-F02B64965C24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{456E5C47-9E36-4249-9CED-F02B64965C24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{456E5C47-9E36-4249-9CED-F02B64965C24}.ReleaseUnsafe|Any CPU.ActiveCfg = Release|Any CPU
+		{456E5C47-9E36-4249-9CED-F02B64965C24}.ReleaseUnsafe|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

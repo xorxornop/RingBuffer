@@ -89,7 +89,7 @@ namespace RingByteBuffer
         /// <value>The maximum length of data that can be written at the current capacity of the ringbuffer.</value>
         public int Spare
         {
-            get { return _ringBuffer.Spare; }
+            get { return _ringBuffer.SpareLength; }
         }
 
         /// <summary>

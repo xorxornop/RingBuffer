@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyDescription("High performance ring/circular buffer for byte data")]
 [assembly: AssemblyConfiguration ("")]
 [assembly: AssemblyCompany("Matthew Ducker")]
-[assembly: AssemblyProduct ("RingByteBuffer")]
+[assembly: AssemblyProduct("RingByteBuffer")]
 [assembly: AssemblyCopyright ("Matthew Ducker")]
 [assembly: AssemblyTrademark ("")]
 [assembly: AssemblyCulture ("")]

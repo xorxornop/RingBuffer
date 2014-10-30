@@ -7,7 +7,8 @@ using PerfCopy;
 namespace RingByteBuffer
 {
     /// <summary>
-    ///     <see cref="RingBuffer"/> implementation allowing for concurrent (parallel) I/O.
+    ///     Concurrent <see cref="RingBuffer"/> implementation allowing for concurrent (parallel) I/O - 
+    ///     operations can be concurrent (depending on pattern of use), and are optionally asynchronous.
     /// </summary>
     /// <remarks>
     ///     Concurrent I/O is handled by reading shared state, determining what shared state 
@@ -63,7 +64,7 @@ namespace RingByteBuffer
         /// <summary>
         ///     Capacity not filled with data.
         /// </summary>
-        public override int Spare
+        public override int SpareLength
         {
             get
             {
