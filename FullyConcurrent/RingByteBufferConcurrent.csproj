@@ -37,11 +37,6 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncHelpers\AsyncManualResetEvent.cs" />
@@ -52,7 +47,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\RingByteBuffer.csproj">
+    <ProjectReference Include="..\PartiallyConcurrent\RingByteBuffer.csproj">
       <Project>{ac576c01-44f5-4a45-9b81-5affdc748a6f}</Project>
       <Name>RingByteBuffer</Name>
     </ProjectReference>

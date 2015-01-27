@@ -1,2 +1,4 @@
-bin/
-obj/
+FullyConcurrent/bin/
+FullyConcurrent/obj/
+PartiallyConcurrent/bin/
+PartiallyConcurrent/obj/
