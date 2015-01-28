@@ -37,18 +37,6 @@
     <DebugType>pdbonly</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'ReleaseUnsafe|AnyCPU' ">
-    <OutputPath>bin\ReleaseUnsafe\</OutputPath>
-    <DocumentationFile>bin\Release\RingByteBuffer.xml</DocumentationFile>
-    <Optimize>true</Optimize>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>INCLUDE_UNSAFE</DefineConstants>
-    <DebugType>pdbonly</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
   <ItemGroup>
     <Compile Include="ConcurrentRingBuffer.cs" />
     <Compile Include="IRingBuffer.cs" />

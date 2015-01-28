@@ -7,8 +7,8 @@
     <ProjectGuid>{456E5C47-9E36-4249-9CED-F02B64965C24}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RingByteBuffer</RootNamespace>
-    <AssemblyName>RingByteBufferConcurrent</AssemblyName>
+    <RootNamespace>RingByteBuffer.FullyConcurrent</RootNamespace>
+    <AssemblyName>RingByteBuffer.FullyConcurrent</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
@@ -30,6 +30,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\RingByteBuffer.FullyConcurrent.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PerfCopy">
@@ -45,6 +46,7 @@
     <Compile Include="AsyncHelpers\TaskCompletionSourceExtensions.cs" />
     <Compile Include="FullyConcurrentRingBuffer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="FullyConcurrentRingBufferStream.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PartiallyConcurrent\RingByteBuffer.csproj">

@@ -28,7 +28,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RingByteBuffer.AsyncHelpers
+namespace RingByteBuffer.FullyConcurrent.AsyncHelpers
 {
     /// <summary>
     ///     An async-compatible manual-reset event.

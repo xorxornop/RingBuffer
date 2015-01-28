@@ -25,12 +25,12 @@ using System.Threading.Tasks;
 namespace RingByteBuffer
 {
     /// <summary>
-    ///     Exposes a <see cref="RingBuffer" /> as a Stream.
+    ///     Exposes a <see cref="RingByteBuffer.IRingBuffer" /> as a <see cref="T:System.IO.Stream" />.
     ///     Provides buffer capability with standard stream interface.
     /// </summary>
-    public sealed class RingBufferStream : Stream
+    public class RingBufferStream : Stream
     {
-        private RingBuffer _ringBuffer;
+        protected IRingBuffer RingBuffer;
 
         /// <summary>
         ///     Initializes a new <see cref="RingBufferStream" />.
@@ -39,25 +39,42 @@ namespace RingByteBuffer
         /// <param name="allowOverwrite">If set to <c>true</c> allow overwrite.</param>
         public RingBufferStream(int capacity, bool allowOverwrite)
         {
-            _ringBuffer = new SequentialRingBuffer(capacity, null, allowOverwrite);
+            RingBuffer = new ConcurrentRingBuffer(capacity, null, allowOverwrite);
+        }
+
+        public static RingBufferStream CreateSequential(int capacity, bool allowOverwrite = false)
+        {
+            var ringBuffer = new SequentialRingBuffer(capacity, null, allowOverwrite);
+            return new RingBufferStream(ringBuffer);
+        }
+
+        public static RingBufferStream CreateConcurrent(int capacity, bool allowOverwrite = false)
+        {
+            var ringBuffer = new ConcurrentRingBuffer(capacity, null, allowOverwrite);
+            return new RingBufferStream(ringBuffer);
+        }
+
+        protected RingBufferStream(IRingBuffer ringBufferImpl)
+        {
+            RingBuffer = ringBufferImpl;
         }
 
         /// <inheritdoc />
         public override bool CanRead
         {
-            get { return _ringBuffer.CurrentLength > 0; }
+            get { return RingBuffer.CurrentLength > 0; }
         }
 
         /// <inheritdoc />
         public override bool CanSeek
         {
-            get { return _ringBuffer.CurrentLength > 0; }
+            get { return RingBuffer.CurrentLength > 0; }
         }
 
         /// <inheritdoc />
         public override bool CanWrite
         {
-            get { return _ringBuffer.CurrentLength < _ringBuffer.MaximumCapacity; }
+            get { return RingBuffer.CurrentLength < RingBuffer.MaximumCapacity; }
         }
 
         /// <summary>
@@ -71,7 +88,7 @@ namespace RingByteBuffer
         /// <inheritdoc />
         public override long Length
         {
-            get { return _ringBuffer.CurrentLength; }
+            get { return RingBuffer.CurrentLength; }
         }
 
         /// <summary>
@@ -80,7 +97,7 @@ namespace RingByteBuffer
         /// <value>The maximum length of the ringbuffer.</value>
         public int Capacity
         {
-            get { return _ringBuffer.MaximumCapacity; }
+            get { return RingBuffer.MaximumCapacity; }
         }
 
         /// <summary>
@@ -89,7 +106,7 @@ namespace RingByteBuffer
         /// <value>The maximum length of data that can be written at the current capacity of the ringbuffer.</value>
         public int Spare
         {
-            get { return _ringBuffer.SpareLength; }
+            get { return RingBuffer.SpareLength; }
         }
 
         /// <summary>
@@ -106,7 +123,7 @@ namespace RingByteBuffer
         /// </summary>
         public override int ReadByte()
         {
-            return _ringBuffer.Take();
+            return RingBuffer.Take();
         }
 
         /// <summary>
@@ -118,8 +135,8 @@ namespace RingByteBuffer
         /// <param name="count">Quantity of bytes to read into <paramref name="buffer" />.</param>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            count = Math.Min(count, _ringBuffer.CurrentLength);
-            _ringBuffer.Take(buffer, offset, count);
+            count = Math.Min(count, RingBuffer.CurrentLength);
+            RingBuffer.Take(buffer, offset, count);
             return count;
         }
 
@@ -136,13 +153,13 @@ namespace RingByteBuffer
         /// </param>
         public int Read(byte[] buffer, int offset, int count, bool exact)
         {
-            if (_ringBuffer.CurrentLength == 0 && exact && count > 0) {
+            if (RingBuffer.CurrentLength == 0 && exact && count > 0) {
                 throw new EndOfStreamException();
             }
-            if (exact && _ringBuffer.CurrentLength < count) {
-                count = _ringBuffer.CurrentLength;
+            if (exact && RingBuffer.CurrentLength < count) {
+                count = RingBuffer.CurrentLength;
             }
-            _ringBuffer.Take(buffer, offset, count);
+            RingBuffer.Take(buffer, offset, count);
             return count;
         }
 
@@ -154,13 +171,13 @@ namespace RingByteBuffer
         /// <returns>Number of bytes written (read from the buffer).</returns>
         public int ReadTo(Stream destination, int count)
         {
-            if (_ringBuffer.CurrentLength == 0 && count > 0) {
+            if (RingBuffer.CurrentLength == 0 && count > 0) {
                 throw new EndOfStreamException();
             }
-            if (_ringBuffer.CurrentLength < count) {
-                count = _ringBuffer.CurrentLength;
+            if (RingBuffer.CurrentLength < count) {
+                count = RingBuffer.CurrentLength;
             }
-            _ringBuffer.TakeTo(destination, count);
+            RingBuffer.TakeTo(destination, count);
             return count;
         }
 
@@ -172,10 +189,10 @@ namespace RingByteBuffer
         /// <returns>Number of bytes written (read from the ringbuffer).</returns>
         public Task ReadToAsync(Stream destination, int count)
         {
-            if (_ringBuffer.CurrentLength == 0 && count > 0) {
+            if (RingBuffer.CurrentLength == 0 && count > 0) {
                 throw new EndOfStreamException();
             }
-            return _ringBuffer.TakeToAsync(destination, count, CancellationToken.None);
+            return RingBuffer.TakeToAsync(destination, count, CancellationToken.None);
         }
 
         /// <summary>
@@ -187,10 +204,10 @@ namespace RingByteBuffer
         /// <returns>Number of bytes written (read from the ringbuffer).</returns>
         public Task ReadToAsync(Stream destination, int count, CancellationToken cancellationToken)
         {
-            if (_ringBuffer.CurrentLength == 0 && count > 0) {
+            if (RingBuffer.CurrentLength == 0 && count > 0) {
                 throw new EndOfStreamException();
             }
-            return _ringBuffer.TakeToAsync(destination, count, cancellationToken);
+            return RingBuffer.TakeToAsync(destination, count, cancellationToken);
         }
 
         /// <summary>
@@ -199,7 +216,7 @@ namespace RingByteBuffer
         /// <param name="value">Byte to write to the ringbuffer.</param>
         public override void WriteByte(byte value)
         {
-            _ringBuffer.Put(value);
+            RingBuffer.Put(value);
         }
 
         /// <summary>
@@ -210,7 +227,7 @@ namespace RingByteBuffer
         /// <param name="count">Number of bytes to write into the ringbuffer.</param>
         public override void Write(byte[] buffer, int offset, int count)
         {
-            _ringBuffer.Put(buffer, offset, count);
+            RingBuffer.Put(buffer, offset, count);
         }
 
         /// <summary>
@@ -222,7 +239,7 @@ namespace RingByteBuffer
         /// <returns>Number of bytes written (read from the source).</returns>
         public int WriteFrom(Stream source, int count)
         {
-            _ringBuffer.PutFrom(source, count);
+            RingBuffer.PutFrom(source, count);
             return count;
         }
 
@@ -235,7 +252,7 @@ namespace RingByteBuffer
         /// <returns>Number of bytes written (read from the source).</returns>
         public Task WriteFromAsync(Stream source, int count)
         {
-            return _ringBuffer.PutFromAsync(source, count, CancellationToken.None);
+            return RingBuffer.PutFromAsync(source, count, CancellationToken.None);
         }
 
         /// <summary>
@@ -248,7 +265,7 @@ namespace RingByteBuffer
         /// <returns>Number of bytes written (read from the source).</returns>
         public Task WriteFromAsync(Stream source, int count, CancellationToken cancellationToken)
         {
-            return _ringBuffer.PutFromAsync(source, count, cancellationToken);
+            return RingBuffer.PutFromAsync(source, count, cancellationToken);
         }
 
         /// <summary>
@@ -264,7 +281,7 @@ namespace RingByteBuffer
             if (origin == SeekOrigin.End) {
                 throw new NotSupportedException("Seek only possible from current stream position (Begin/Current).");
             }
-            _ringBuffer.Skip((int) offset);
+            RingBuffer.Skip((int) offset);
             return offset;
         }
 
@@ -276,17 +293,17 @@ namespace RingByteBuffer
             if (value < 0) {
                 throw new ArgumentException("Value cannot be negative.");
             }
-            if (value > _ringBuffer.CurrentLength) {
+            if (value > RingBuffer.CurrentLength) {
                 throw new NotSupportedException("Cannot extend contents of ringbuffer.");
             }
 
-            _ringBuffer.Skip(_ringBuffer.CurrentLength - (int) value);
+            RingBuffer.Skip(RingBuffer.CurrentLength - (int) value);
         }
 
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            _ringBuffer.Reset();
+            RingBuffer.Reset();
             base.Dispose(disposing);
         }
     }

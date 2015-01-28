@@ -28,7 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace RingByteBuffer.AsyncHelpers
+namespace RingByteBuffer.FullyConcurrent.AsyncHelpers
 {
     /// <summary>
     ///     Represents the producer side of a <see cref="System.Threading.Tasks.Task" /> unbound to a delegate,

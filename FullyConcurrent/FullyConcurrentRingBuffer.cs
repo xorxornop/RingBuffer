@@ -22,30 +22,33 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using PerfCopy;
-using RingByteBuffer.AsyncHelpers;
+using RingByteBuffer.FullyConcurrent.AsyncHelpers;
 
-namespace RingByteBuffer
+namespace RingByteBuffer.FullyConcurrent
 {
+    /// <summary>
+    ///     Concurrent <see cref="IRingBuffer"/> implementation allowing for concurrent (parallel) I/O - 
+    ///     operations can be concurrent (depending on pattern of use), and are optionally asynchronous. 
+    ///     This implementation allows an arbitrary number of concurrent reads and writes (it is suggested 
+    ///     to use the number of physical CPUs or less).
+    /// </summary>
     public class FullyConcurrentRingBuffer : IRingBuffer
     {
         protected readonly int Capacity;
         protected byte[] Buffer;
-        protected int /*BufferHeadOffset, */ BufferHeadOffsetDirty;
-        protected int /*BufferTailOffset, */ BufferTailOffsetDirty;
+        protected int BufferHeadOffsetDirty, BufferTailOffsetDirty;
         protected int ContentLength, ContentLengthDirty;
 
-        protected int LatestPutSequenceIdentity = 0;
+        protected SemaphoreSlim OperationBeginLock = new SemaphoreSlim(0, 1); // Put/take
+        protected SemaphoreSlim OperationEndLock = new SemaphoreSlim(0, 1); // Put/take
 
-        protected int LatestTakeSequenceIdentity = 0;
-
-        protected SemaphoreSlim OperationBeginLock = new SemaphoreSlim(0, 1); // put/take
-        protected SemaphoreSlim OperationEndLock = new SemaphoreSlim(0, 1); // put/take
-        protected int PendingPutSequenceIdentity = 0;
-        protected int PendingTakeSequenceIdentity = 0;
+        protected int PendingPutSequenceIdentity = 0, PendingTakeSequenceIdentity = 0;  
         protected AsyncManualResetEvent PutCompletedEvent = new AsyncManualResetEvent();
-        protected SemaphoreSlim StateController; // controls # of concurrent puts/takes
-        protected SpinLock StateModificationLock = new SpinLock();
         protected AsyncManualResetEvent TakeCompletedEvent = new AsyncManualResetEvent();
+        protected int LatestPutSequenceIdentity = 0, LatestTakeSequenceIdentity = 0;
+
+        protected SemaphoreSlim StateController; // Controls # of concurrent puts/takes - set up in constructor
+        protected SpinLock StateModificationLock = new SpinLock();
 
 
         /// <summary>
@@ -54,8 +57,8 @@ namespace RingByteBuffer
         /// <param name="maximumCapacity">Maximum required storage capability of the ringbuffer.</param>
         /// <param name="buffer">Data to initialise the ringbuffer with.</param>
         /// <param name="maxOperations">
-        ///     Maximum number of concurrent I/O operations (read, write). Should probably be based on CPU
-        ///     count.
+        ///     Maximum number of concurrent I/O operations (read, write). Should probably be based on
+        ///     physical CPU count (equal or less).
         /// </param>
         /// <exception cref="ArgumentNullException">Supplied data array is null.</exception>
         /// <exception cref="ArgumentException">
@@ -68,7 +71,6 @@ namespace RingByteBuffer
 
             if (buffer != null) {
                 buffer.CopyBytes_NoChecks(0, Buffer, 0, buffer.Length);
-                //BufferTailOffset = buffer.Length;
                 BufferTailOffsetDirty = buffer.Length;
                 ContentLength = BufferTailOffsetDirty;
                 ContentLengthDirty = BufferTailOffsetDirty;
@@ -178,7 +180,7 @@ namespace RingByteBuffer
 
         public bool Overwritable
         {
-            get { throw new InvalidOperationException(); }
+            get { return false; }
         }
 
         #endregion
@@ -394,9 +396,7 @@ namespace RingByteBuffer
                 StateModificationLock.Enter(ref lockTaken);
                 // Write shared state
                 Array.Clear(Buffer, 0, Buffer.Length);
-                //BufferHeadOffset = 0;
                 BufferHeadOffsetDirty = 0;
-                //BufferTailOffset = 0;
                 BufferTailOffsetDirty = 0;
                 ContentLength = 0;
                 ContentLengthDirty = 0;
@@ -663,9 +663,7 @@ namespace RingByteBuffer
             bool lockTaken = false;
             try {
                 StateModificationLock.Enter(ref lockTaken);
-                //Interlocked.Exchange(ref BufferHeadOffsetDirty, headOffset);
                 Interlocked.Add(ref ContentLength, -count);
-                //Interlocked.Increment(ref PendingTakeSequenceIdentity);
             }
             finally {
                 if (lockTaken) {

@@ -29,7 +29,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 
-namespace RingByteBuffer.AsyncHelpers
+namespace RingByteBuffer.FullyConcurrent.AsyncHelpers
 {
     /// <summary>
     ///     Provides extension methods for <see cref="TaskCompletionSource{TResult}" />.

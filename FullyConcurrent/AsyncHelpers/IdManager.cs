@@ -26,7 +26,7 @@
 
 using System.Threading;
 
-namespace RingByteBuffer.AsyncHelpers
+namespace RingByteBuffer.FullyConcurrent.AsyncHelpers
 {
     /// <summary>
     ///     Allocates Ids for instances on demand. 0 is an invalid/unassigned Id. Ids may be non-unique in very long-running

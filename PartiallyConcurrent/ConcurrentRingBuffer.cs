@@ -8,7 +8,8 @@ namespace RingByteBuffer
 {
     /// <summary>
     ///     Concurrent <see cref="RingBuffer"/> implementation allowing for concurrent (parallel) I/O - 
-    ///     operations can be concurrent (depending on pattern of use), and are optionally asynchronous.
+    ///     operations can be concurrent (depending on pattern of use), and are optionally asynchronous. 
+    ///     This implementation allows only a single concurrent read and write (one of each).
     /// </summary>
     /// <remarks>
     ///     Concurrent I/O is handled by reading shared state, determining what shared state 
