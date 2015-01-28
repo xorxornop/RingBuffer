@@ -7,7 +7,9 @@ using PerfCopy;
 namespace RingByteBuffer
 {
     /// <summary>
-    ///     <see cref="RingBuffer"/> implementation allowing for concurrent (parallel) I/O.
+    ///     Concurrent <see cref="RingBuffer"/> implementation allowing for concurrent (parallel) I/O - 
+    ///     operations can be concurrent (depending on pattern of use), and are optionally asynchronous. 
+    ///     This implementation allows only a single concurrent read and write (one of each).
     /// </summary>
     /// <remarks>
     ///     Concurrent I/O is handled by reading shared state, determining what shared state 
@@ -63,7 +65,7 @@ namespace RingByteBuffer
         /// <summary>
         ///     Capacity not filled with data.
         /// </summary>
-        public override int Spare
+        public override int SpareLength
         {
             get
             {
@@ -134,6 +136,36 @@ namespace RingByteBuffer
                 offset += chunk;
                 length -= chunk;
             }
+            PutPublish(localBufferTailOffset, count);
+        }
+
+        public async Task PutAsync(byte[] buffer, int offset, int count)
+        {
+            if (offset < 0) {
+                throw new ArgumentOutOfRangeException("offset", "Negative offset specified. Offset must be positive.");
+            }
+            // Local state (shadow of shared) for operation
+            int localBufferTailOffset;
+            // Read current shared state into locals, determine post-op state, and update shared state to it
+            PutAllocate(out localBufferTailOffset, count);
+            if (buffer.Length < offset + count) {
+                throw new ArgumentException("Source array too small for requested input.");
+            }
+
+            var ts = new Task[2];
+            int tsi = 0;
+            int length = count;
+            while (length > 0) {
+                int chunk = Math.Min(Capacity - localBufferTailOffset, length);
+                int offsetClosure = offset;
+                int tailOffsetClosure = localBufferTailOffset;
+                ts[tsi] = Task.Run(() => buffer.CopyBytes_NoChecks(offsetClosure, Buffer, tailOffsetClosure, chunk));
+                localBufferTailOffset = (localBufferTailOffset + chunk == Capacity) ? 0 : localBufferTailOffset + chunk;
+                offset += chunk;
+                length -= chunk;
+                tsi++;
+            }
+            await Task.WhenAll(ts);
             PutPublish(localBufferTailOffset, count);
         }
 
@@ -356,6 +388,34 @@ namespace RingByteBuffer
             }
             TakePublish(localBufferHeadOffset, count);
         }
+
+        public async Task TakeAsync(byte[] buffer, int offset, int count)
+        {
+            if (offset < 0) {
+                throw new ArgumentOutOfRangeException("offset", "Negative offset specified. Offsets must be positive.");
+            }
+            int localBufferHeadOffset;
+            TakeInitial(out localBufferHeadOffset, count);
+            if (buffer.Length < offset + count) {
+                throw new ArgumentException("Destination array too small for requested output.");
+            }
+
+            var ts = new Task[2];
+            int tsi = 0;
+            int length = count;
+            while (length > 0) {
+                int chunk = Math.Min(Capacity - localBufferHeadOffset, length);               
+                int offsetClosure = offset;
+                int headOffsetClosure = localBufferHeadOffset;
+                ts[tsi] = Task.Run(() => Buffer.CopyBytes_NoChecks(headOffsetClosure, buffer, offsetClosure, chunk));
+                localBufferHeadOffset = (localBufferHeadOffset + chunk == Capacity) ? 0 : localBufferHeadOffset + chunk;
+                offset += chunk;
+                length -= chunk;
+                tsi++;
+            }
+            await Task.WhenAll(ts);
+            TakePublish(localBufferHeadOffset, count);
+        } 
 
         /// <inheritdoc />
         public override void TakeTo(Stream destination, int count)
