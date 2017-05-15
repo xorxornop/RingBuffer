@@ -2,3 +2,5 @@ FullyConcurrent/bin/
 FullyConcurrent/obj/
 PartiallyConcurrent/bin/
 PartiallyConcurrent/obj/
+RingBuffer/obj
+*.userprefs

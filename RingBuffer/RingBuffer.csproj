@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- <TargetFramework>netstandard1.6</TargetFramework> -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- <ReleaseVersion>1.2</ReleaseVersion> -->
+    <ReleaseVersion>1.2</ReleaseVersion>
+
+    <!-- modifications begin here ... -->
+      <!-- Add 'RuntimeFrameworkVersion' node when 'TargetFramework' node is 'netcoreapp2.0' -->
+      <!--<RuntimeFrameworkVersion>2.0.0-preview1-002111-00</RuntimeFrameworkVersion>-->
+      <!-- Add 'NETStandardImplicitPackageVersion' node when 'TargetFramework' node is 'netstandard2.0' -->
+      <NETStandardImplicitPackageVersion>2.0.0-preview1-25301-01</NETStandardImplicitPackageVersion>
+    <!-- ... modifications end here. -->
+  </PropertyGroup>
+
+
+  <!-- 'netcoreapp2.0' (.NET Core 2.0 application) targeting: -->
+  <!--
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <ReleaseVersion>1.0</ReleaseVersion>
+    <RuntimeFrameworkVersion>2.0.0-preview1-002111-00</RuntimeFrameworkVersion>    
+  </PropertyGroup>
+  -->
+
+  <!-- 'netstandard2.0' (.NET Standard 2.0) library targeting: -->
+  <!--
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ReleaseVersion>1.0</ReleaseVersion>
+    <NETStandardImplicitPackageVersion>2.0.0-preview1-25301-01</NETStandardImplicitPackageVersion> 
+  </PropertyGroup>
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="System.Buffers" Version="4.3.0" />
+    <PackageReference Include="System.Memory" Version="4.4.0-preview1-25305-02" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties>
+        <Policies>
+          <TextStylePolicy TabWidth="4" IndentWidth="4" RemoveTrailingWhitespace="True" NoTabsAfterNonTabs="False" EolMarker="Native" FileWidth="80" TabsToSpaces="True" scope="text/plain">
+            <inheritsSet />
+            <inheritsScope />
+          </TextStylePolicy>
+        </Policies>
+      </Properties>
+    </MonoDevelop>
+  </ProjectExtensions>
+</Project>
