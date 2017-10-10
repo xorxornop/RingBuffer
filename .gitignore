@@ -4,3 +4,5 @@ PartiallyConcurrent/bin/
 PartiallyConcurrent/obj/
 RingBuffer/obj
 *.userprefs
+/.vs
+/RingBuffer/bin
